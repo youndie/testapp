@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">testapp</string>
+    <string name="run">Поехали</string>
+    <string name="retry">Повторить</string>
+    <string name="points_number">Число точек</string>
+    <string name="info_text">Информационный текст</string>
+</resources>
