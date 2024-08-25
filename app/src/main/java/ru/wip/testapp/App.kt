@@ -9,13 +9,13 @@ import ru.wip.testapp.feature.points.pointsModule
 
 class App : Application() {
 
-    override fun onCreate() {
-        super.onCreate()
+  override fun onCreate() {
+    super.onCreate()
 
-        startKoin {
-            androidLogger()
-            androidContext(this@App)
-            modules(pointsModule, mainModule)
-        }
+    startKoin {
+      androidLogger()
+      androidContext(this@App)
+      modules(pointsModule, mainModule)
     }
+  }
 }

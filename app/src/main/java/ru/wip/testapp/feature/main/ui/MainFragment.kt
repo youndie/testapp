@@ -21,85 +21,85 @@ import ru.wip.testapp.feature.main.domain.MainViewModel
 
 class MainFragment : Fragment() {
 
-    private val viewModel: MainViewModel by viewModel()
+  private val viewModel: MainViewModel by viewModel()
 
-    private lateinit var binding: FragmentMainBinding
+  private lateinit var binding: FragmentMainBinding
 
-    private val numberTextWatcher = object : TextWatcher {
-        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+  private val numberTextWatcher = object : TextWatcher {
+    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+    }
+
+    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+    }
+
+    override fun afterTextChanged(s: Editable?) {
+      viewModel.onNumberTextChanged(s?.toString())
+    }
+
+  }
+
+  override fun onCreateView(
+    inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+  ): View {
+    val view = inflater.inflate(R.layout.fragment_main, container, false)
+    binding = FragmentMainBinding.bind(view)
+    return view
+  }
+
+  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    super.onViewCreated(view, savedInstanceState)
+
+    observeUiState()
+    setupListeners()
+  }
+
+  private fun observeUiState() {
+    viewLifecycleOwner.lifecycleScope.launch {
+      viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+        viewModel.uiStateFlow.collectLatest { state ->
+          showProgress(state.loading)
+
+          state.number?.toString()?.let {
+            showText(it)
+          }
+
+          state.error?.let(::showError)
         }
+      }
+    }
+  }
 
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+  private fun setupListeners() {
+    binding.runButton.setOnClickListener {
+      viewModel.onRunClicked()
+    }
+    binding.numberEditText.addTextChangedListener(numberTextWatcher)
+  }
+
+  private fun showText(numberText: String) {
+    with(binding.numberEditText) {
+      if (this.text?.toString() == numberText) return
+      removeTextChangedListener(numberTextWatcher)
+      setText(numberText)
+      addTextChangedListener(numberTextWatcher)
+    }
+  }
+
+  private fun showProgress(loading: Boolean) {
+    with(binding) {
+      numberTextInputLayout.isEnabled = !loading
+      runButton.isEnabled = !loading
+    }
+  }
+
+  private fun showError(error: String) {
+    Snackbar.make(binding.root, error, LENGTH_SHORT).apply {
+      addCallback(object : Snackbar.Callback() {
+        override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+          super.onDismissed(transientBottomBar, event)
+          viewModel.onSnackBarDismissed()
         }
-
-        override fun afterTextChanged(s: Editable?) {
-            viewModel.onNumberTextChanged(s?.toString())
-        }
-
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View {
-        val view = inflater.inflate(R.layout.fragment_main, container, false)
-        binding = FragmentMainBinding.bind(view)
-        return view
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        observeUiState()
-        setupListeners()
-    }
-
-    private fun observeUiState() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiStateFlow.collectLatest { state ->
-                    showProgress(state.loading)
-
-                    state.number?.toString()?.let {
-                        showText(it)
-                    }
-
-                    state.error?.let(::showError)
-                }
-            }
-        }
-    }
-
-    private fun setupListeners() {
-        binding.runButton.setOnClickListener {
-            viewModel.onRunClicked()
-        }
-        binding.numberEditText.addTextChangedListener(numberTextWatcher)
-    }
-
-    private fun showText(numberText: String) {
-        with(binding.numberEditText) {
-            if (this.text?.toString() == numberText) return
-            removeTextChangedListener(numberTextWatcher)
-            setText(numberText)
-            addTextChangedListener(numberTextWatcher)
-        }
-    }
-
-    private fun showProgress(loading: Boolean) {
-        with(binding) {
-            numberTextInputLayout.isEnabled = !loading
-            runButton.isEnabled = !loading
-        }
-    }
-
-    private fun showError(error: String) {
-        Snackbar.make(binding.root, error, LENGTH_SHORT).apply {
-            addCallback(object : Snackbar.Callback() {
-                override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
-                    super.onDismissed(transientBottomBar, event)
-                    viewModel.onSnackBarDismissed()
-                }
-            })
-        }.show()
-    }
+      })
+    }.show()
+  }
 }

@@ -22,67 +22,67 @@ import ru.wip.testapp.feature.points.ui.PointsFragment
 
 class MainActivity : AppCompatActivity() {
 
-    private val navigator by inject<Navigator>()
+  private val navigator by inject<Navigator>()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        setupNavigation()
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.activity_main)
+    setupNavigation()
+  }
+
+  override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    if (item.itemId == android.R.id.home) {
+      navigator.back()
+      return true
     }
+    return super.onOptionsItemSelected(item)
+  }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) {
-            navigator.back()
-            return true
-        }
-        return super.onOptionsItemSelected(item)
-    }
+  private fun setupNavigation() {
+    val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+    val navController = navHostFragment.navController
 
-    private fun setupNavigation() {
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        val navController = navHostFragment.navController
+    navController.graph = navController.createGraph(startDestination = Screens.MAIN, builder = {
+      fragment<MainFragment>(Screens.MAIN)
+      fragment<PointsFragment>(Screens.POINTS)
+    })
 
-        navController.graph = navController.createGraph(startDestination = Screens.MAIN, builder = {
-            fragment<MainFragment>(Screens.MAIN)
-            fragment<PointsFragment>(Screens.POINTS)
-        })
-
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.CREATED) {
-                launch {
-                    navigator.observe.collectLatest { command ->
-                        dispatchNavigatorCommand(navController, command)
-                    }
-                }
-
-                launch {
-                    navHostFragment.childFragmentManager.addOnBackStackChangedListener {
-                        val backStackEntryCount = navHostFragment.childFragmentManager.backStackEntryCount
-                        supportActionBar?.setDisplayHomeAsUpEnabled(backStackEntryCount > 0)
-                    }
-                }
-            }
+    lifecycleScope.launch {
+      repeatOnLifecycle(Lifecycle.State.CREATED) {
+        launch {
+          navigator.observe.collectLatest { command ->
+            dispatchNavigatorCommand(navController, command)
+          }
         }
 
-        onBackPressedDispatcher.addCallback {
-            navigator.back()
+        launch {
+          navHostFragment.childFragmentManager.addOnBackStackChangedListener {
+            val backStackEntryCount = navHostFragment.childFragmentManager.backStackEntryCount
+            supportActionBar?.setDisplayHomeAsUpEnabled(backStackEntryCount > 0)
+          }
         }
-
-        val backStackEntryCount = navHostFragment.childFragmentManager.backStackEntryCount
-        supportActionBar?.setDisplayHomeAsUpEnabled(backStackEntryCount > 0)
+      }
     }
 
-    private fun dispatchNavigatorCommand(navController: NavController, command: NavigationCommand) {
-        when (command) {
-            is NavigationCommand.NavigateTo -> {
-                navController.navigate(command.screen)
-            }
-
-            is NavigationCommand.Back -> {
-                if (!navController.popBackStack()) {
-                    finish()
-                }
-            }
-        }
+    onBackPressedDispatcher.addCallback {
+      navigator.back()
     }
+
+    val backStackEntryCount = navHostFragment.childFragmentManager.backStackEntryCount
+    supportActionBar?.setDisplayHomeAsUpEnabled(backStackEntryCount > 0)
+  }
+
+  private fun dispatchNavigatorCommand(navController: NavController, command: NavigationCommand) {
+    when (command) {
+      is NavigationCommand.NavigateTo -> {
+        navController.navigate(command.screen)
+      }
+
+      is NavigationCommand.Back -> {
+        if (!navController.popBackStack()) {
+          finish()
+        }
+      }
+    }
+  }
 }
